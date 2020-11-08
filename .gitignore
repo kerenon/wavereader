@@ -167,3 +167,5 @@ pip-selfcheck.json
 *.json
 *.opus
 ffmpeg*.txt
+*.flac
+*.wav
