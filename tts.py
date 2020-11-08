@@ -7,6 +7,7 @@ from datetime import datetime
 from google.cloud import texttospeech
 from tempfile import TemporaryDirectory
 from google.api_core.exceptions import InternalServerError
+from pathlib import Path
 
 MAX_REQUESTS_PER_MINUTE = 200
 MAX_CHARS_PER_MINUTE = 135000
@@ -20,7 +21,7 @@ class Narrator:
             language_code="en-US", name=voice_name
         )
         self.audio_config = texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.OGG_OPUS
+            audio_encoding=texttospeech.AudioEncoding.LINEAR16
         )
         # rate limit stuff
         self._minute = -1
@@ -56,11 +57,10 @@ class Narrator:
         self._chars_this_minute += len(text_chunk)
         return response.audio_content
 
-    def text_to_opus(self, text, file_dest):
-        assert file_dest.suffix == ".opus"
+    def text_to_flac(self, text, file_dest):
         td = TemporaryDirectory(dir='.')
         print('TMP: ' + td.name)
-        for text_chunk in tqdm(text, desc=file_dest.stem):
+        for text_chunk in tqdm(text, desc=Path(file_dest).stem):
             # skip empty lines
             if text_chunk:
                 success = False
@@ -70,9 +70,10 @@ class Narrator:
                         success = True
                     except InternalServerError:
                         continue
-                with open(f'{td.name}/{str(self._chunk_counter).zfill(5)}_{file_dest}', 'wb') as out:
+                wav_file_name = f'{td.name}/{str(self._chunk_counter).zfill(5)}_{Path(file_dest).with_suffix(".wav")}'
+                with open(wav_file_name, 'wb') as out:
                     out.write(audio_chunk)
-                with open(f'{td.name}/ffmpeg_file_list.txt', 'a') as f:
-                    f.write(f'file \'{str(self._chunk_counter).zfill(5)}_{file_dest}\'\n')
+                with open(f'{td.name}/ffmpeg_file_list.txt', 'a', encoding='utf8') as f:
+                    f.write(f'file \'{Path(wav_file_name).name}\'\n')
                 self._chunk_counter += 1
-        os.system(f'ffmpeg -f concat -safe 0 -i {td.name}/ffmpeg_file_list.txt -c copy "{file_dest}"')
+        os.system(f'ffmpeg -f concat -safe 0 -i {td.name}/ffmpeg_file_list.txt -c flac "{file_dest}"')

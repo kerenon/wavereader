@@ -64,7 +64,7 @@ def extract_text(src):
 
 
 def main():
-    if os.path.exists('service_account.json'):
+    if Path('service_account.json').exists():
         # TODO: No idea (yet) how to load this file, so let's just set an ENV variable :)
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "service_account.json"
 
@@ -73,7 +73,7 @@ def main():
         sys.exit(1)
 
     ebook = sys.argv[1]
-    if not os.path.exists(ebook):
+    if not Path(ebook).exists():
         logger.critical(f'File not found: {ebook}')
         sys.exit(1)
 
@@ -92,9 +92,9 @@ def main():
         chapter_content_text = extract_text(chapter_content)
         if len(chapter_content_text) > 0:
             logger.debug('Processing lines...')
-            opus_path = Path(f'{Path(ebook).stem}_{str(chapter_counter).zfill(2)}_{sanitize_text(chapter.title)}').with_suffix(".opus")
+            flac_path = Path(f'{Path(ebook).stem}_{str(chapter_counter).zfill(2)}_{sanitize_text(chapter.title)}').with_suffix(".flac")
             narrator = Narrator()
-            narrator.text_to_opus(chapter_content_text, opus_path)
+            narrator.text_to_flac(chapter_content_text, flac_path)
             chapter_counter += 1
         else:
             logger.debug(f'Skipping chapter: no text')
