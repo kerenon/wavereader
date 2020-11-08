@@ -78,12 +78,21 @@ def main():
         sys.exit(1)
 
     book = epub.read_epub(ebook)
-    title = book.get_metadata('DC', 'title')
-    creator = book.get_metadata('DC', 'creator')
+    title = book.title
+    author = 'Unknown'
+
+    for creator in book.get_metadata('DC', 'creator'):
+        creator_name = creator[0]
+        creator_tags = creator[1]
+        if 'id' in creator_tags.keys():
+            if creator_tags['id'] == 'id-1':
+                author = creator_name
+                break
+
     toc = book.toc
 
     logger.info(f'Title: {title}')
-    logger.info(f'Author: {creator}')
+    logger.info(f'Author: {author}')
     chapter_counter = 1
 
     for chapter in toc:
@@ -94,6 +103,14 @@ def main():
             logger.debug('Processing lines...')
             flac_path = Path(f'{Path(ebook).stem}_{str(chapter_counter).zfill(2)}_{sanitize_text(chapter.title)}').with_suffix(".flac")
             narrator = Narrator()
+            narrator.author = author
+            narrator.album_title = title
+            narrator.title = chapter.title
+            narrator.track_number = chapter_counter
+            if Path(ebook).with_suffix('.jpg').exists():
+                narrator.coverfile = Path(ebook).with_suffix('.jpg')
+            elif Path(ebook).with_suffix('.png').exists():
+                narrator.coverfile = Path(ebook).with_suffix('.png')
             narrator.text_to_flac(chapter_content_text, flac_path)
             chapter_counter += 1
         else:

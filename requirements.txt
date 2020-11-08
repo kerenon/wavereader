@@ -3,3 +3,5 @@ google-cloud-texttospeech
 EbookLib
 BeautifulSoup4
 tqdm
+mutagen
+Pillow
