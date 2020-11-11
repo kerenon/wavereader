@@ -42,6 +42,8 @@ def sanitize_text(text: str) -> str:
 
 def extract_text(src):
     soup = BeautifulSoup(src, 'html.parser')
+    for script in soup(["script", "style"]):
+        script.extract()
     text = soup.find_all(text=True)
 
     output = []
@@ -54,6 +56,7 @@ def extract_text(src):
         'head',
         'input',
         'script',
+        'title'
     ]
 
     for t in text:
@@ -61,6 +64,18 @@ def extract_text(src):
             output.append(t)
 
     return output
+
+
+def is_chapter_marker(element, toc):
+    for t in toc:
+        if element == t.href:
+            return True
+
+
+def get_chapter_title(element, toc):
+    for t in toc:
+        if element == t.href:
+            return t.title
 
 
 def main():
@@ -89,32 +104,42 @@ def main():
                 author = creator_name
                 break
 
-    toc = book.toc
-
     logger.info(f'Title: {title}')
     logger.info(f'Author: {author}')
-    chapter_counter = 1
+    chapter_title = 'chapter_title_not_available'
+    last_chapter = ''
+    book_content = [book.get_item_with_id(e[0]).get_name() for e in book.spine]
 
-    for chapter in toc:
-        logger.debug(f'Processing chapter: {chapter.title}')
-        chapter_content = book.get_item_with_href(chapter.href).get_body_content().decode('utf-8')
-        chapter_content_text = extract_text(chapter_content)
-        if len(chapter_content_text) > 0:
-            logger.debug('Processing lines...')
-            flac_path = Path(f'{Path(ebook).stem}_{str(chapter_counter).zfill(2)}_{sanitize_text(chapter.title)}').with_suffix(".flac")
-            narrator = Narrator()
-            narrator.author = author
-            narrator.album_title = title
-            narrator.title = chapter.title
-            narrator.track_number = chapter_counter
-            if Path(ebook).with_suffix('.jpg').exists():
-                narrator.coverfile = Path(ebook).with_suffix('.jpg')
-            elif Path(ebook).with_suffix('.png').exists():
-                narrator.coverfile = Path(ebook).with_suffix('.png')
-            narrator.text_to_flac(chapter_content_text, flac_path)
-            chapter_counter += 1
+    joblist = {}
+
+    for element in book_content:
+        if is_chapter_marker(element, book.toc):
+            chapter_title = get_chapter_title(element, book.toc)
+            if chapter_title != last_chapter:
+                last_chapter = chapter_title
+        logger.debug(f'Processing chapter: >{chapter_title}<')
+        element_content = book.get_item_with_href(element).content.decode('utf-8')
+        element_content_text = extract_text(element_content)
+        if len(element_content_text) <= 10:
+            continue
+        if chapter_title in joblist:
+            joblist[chapter_title].extend(element_content_text)
         else:
-            logger.debug(f'Skipping chapter: no text')
+            joblist[chapter_title] = element_content_text
+
+    for counter, job in enumerate(joblist.keys(), start=1):
+        logger.debug(f'Processing chapter {job}...')
+        flac_path = Path(f'{Path(ebook).stem}_{str(counter).zfill(3)}_{sanitize_text(job)}').with_suffix(".flac")
+        narrator = Narrator()
+        narrator.author = author
+        narrator.album_title = title
+        narrator.title = job
+        narrator.track_number = counter
+        if Path(ebook).with_suffix('.jpg').exists():
+            narrator.coverfile = Path(ebook).with_suffix('.jpg')
+        elif Path(ebook).with_suffix('.png').exists():
+            narrator.coverfile = Path(ebook).with_suffix('.png')
+        narrator.text_to_flac(joblist[job], flac_path)
 
 
 if __name__ == "__main__":
