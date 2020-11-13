@@ -68,13 +68,13 @@ def extract_text(src):
 
 def is_chapter_marker(element, toc):
     for t in toc:
-        if element == t.href:
+        if Path(element).name == Path(t.href).name:
             return True
 
 
 def get_chapter_title(element, toc):
     for t in toc:
-        if element == t.href:
+        if Path(element).name == Path(t.href).name:
             return t.title
 
 
@@ -106,7 +106,7 @@ def main():
 
     logger.info(f'Title: {title}')
     logger.info(f'Author: {author}')
-    chapter_title = 'chapter_title_not_available'
+    chapter_title = ''
     last_chapter = ''
     book_content = [book.get_item_with_id(e[0]).get_name() for e in book.spine]
 
@@ -120,8 +120,12 @@ def main():
         logger.debug(f'Processing chapter: >{chapter_title}<')
         element_content = book.get_item_with_href(element).content.decode('utf-8')
         element_content_text = extract_text(element_content)
+
         if len(element_content_text) <= 10:
             continue
+        if chapter_title == '':
+            continue
+
         if chapter_title in joblist:
             joblist[chapter_title].extend(element_content_text)
         else:
