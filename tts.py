@@ -130,7 +130,6 @@ class Narrator:
 
     def text_to_flac(self, text, file_dest):
         td = TemporaryDirectory(dir='.')
-        print('TMP: ' + td.name)
         for text_chunk in tqdm(text, desc=Path(file_dest).stem):
             # skip empty lines
             if text_chunk:
@@ -144,6 +143,10 @@ class Narrator:
                     except ServiceUnavailable:
                         continue
                 wav_file_name = f'{td.name}/{str(self._chunk_counter).zfill(5)}_{Path(file_dest).with_suffix(".wav")}'
+                # TODO: is it possible to add the lines from the book as lyrics?
+                lyric_file_name = f'{td.name}/{str(self._chunk_counter).zfill(5)}_{Path(file_dest).with_suffix(".lrc")}'
+                with open(lyric_file_name, 'w', encoding='utf8') as out:
+                    out.write(f'[00:00.00]{text_chunk}')
                 with open(wav_file_name, 'wb') as out:
                     out.write(audio_chunk)
                 with open(f'{td.name}/ffmpeg_file_list.txt', 'a', encoding='utf8') as f:
