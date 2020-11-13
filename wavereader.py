@@ -68,13 +68,13 @@ def extract_text(src):
 
 def is_chapter_marker(element, toc):
     for t in toc:
-        if Path(element).name == Path(t.href).name:
+        if Path(element).name == Path(t.href).name.split('#')[0]:
             return True
 
 
 def get_chapter_title(element, toc):
     for t in toc:
-        if Path(element).name == Path(t.href).name:
+        if Path(element).name == Path(t.href).name.split('#')[0]:
             return t.title
 
 
