@@ -3,7 +3,7 @@ Create audiobook albums from epub files using Googles WaveNet voices
 
 # Warning
 In its current form, this is nothing more than a proof-of-concept that I hacked together, to see if it's even possible. It is BTW :).
-For now, if you can get it to work, it breaks the epub file into chapters, and creates neat little albums in opus format.
+For now, if you can get it to work, it breaks the epub file into chapters, and creates neat little albums in flac format.
 
 One of the last test-runs produced something like this:
 
