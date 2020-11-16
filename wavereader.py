@@ -8,11 +8,11 @@ from ebooklib import epub
 from pathlib import Path
 
 logFormatter = logging.Formatter("%(asctime)s [%(funcName)20s] [%(levelname)-8.8s]  %(message)s")
-logger = logging.getLogger()
+logger = logging.getLogger('wavereader')
 consoleHandler = logging.StreamHandler()
 consoleHandler.setFormatter(logFormatter)
 logger.addHandler(consoleHandler)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def sanitize_text(text: str) -> str:
@@ -131,10 +131,10 @@ def main():
         else:
             joblist[chapter_title] = element_content_text
 
+    narrator = Narrator()
     for counter, job in enumerate(joblist.keys(), start=1):
-        logger.debug(f'Processing chapter {job}...')
+        logger.info(f'Processing chapter {job}...')
         flac_path = Path(f'{Path(ebook).stem}_{str(counter).zfill(3)}_{sanitize_text(job)}').with_suffix(".flac")
-        narrator = Narrator()
         narrator.author = author
         narrator.album_title = title
         narrator.title = job
@@ -144,6 +144,7 @@ def main():
         elif Path(ebook).with_suffix('.png').exists():
             narrator.coverfile = Path(ebook).with_suffix('.png')
         narrator.text_to_flac(joblist[job], flac_path)
+    logger.info(f'Characters used for conversion: {narrator.used_characters}')
 
 
 if __name__ == "__main__":

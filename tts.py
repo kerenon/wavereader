@@ -1,6 +1,7 @@
 import re
 import os
 import time
+import logging
 
 from tqdm import tqdm
 from datetime import datetime
@@ -14,11 +15,21 @@ from mutagen import id3
 from PIL import Image
 from google.api_core.exceptions import ServiceUnavailable
 
+logger = logging.getLogger('wavereader.tts')
+
 MAX_REQUESTS_PER_MINUTE = 200
 MAX_CHARS_PER_MINUTE = 135000
 
 
 class Narrator:
+
+    @property
+    def used_characters(self):
+        return self._used_characters
+
+    @used_characters.setter
+    def used_characters(self, used_characters):
+        self._used_characters = used_characters
 
     @property
     def author(self):
@@ -74,6 +85,7 @@ class Narrator:
         self._chars_this_minute = 0
         self._chunk_counter = 1
         self._coverfile = ''
+        self._used_characters = 0
 
     def print_voice_names(self, lang="en"):
         print("Available voices for language {}:".format(lang))
@@ -137,6 +149,7 @@ class Narrator:
                 while success == False:
                     try:
                         audio_chunk = self._text_chunk_to_audio_chunk(text_chunk)
+                        self._used_characters += len(text_chunk)
                         success = True
                     except InternalServerError:
                         continue
@@ -152,5 +165,7 @@ class Narrator:
                 with open(f'{td.name}/ffmpeg_file_list.txt', 'a', encoding='utf8') as f:
                     f.write(f'file \'{Path(wav_file_name).name}\'\n')
                 self._chunk_counter += 1
-        os.system(f'ffmpeg -f concat -safe 0 -i {td.name}/ffmpeg_file_list.txt -c flac "{file_dest}"')
+        logger.info(f'Merging audio chunks to file: {file_dest}')
+        os.system(f'ffmpeg -f concat -safe 0 -loglevel quiet -i {td.name}/ffmpeg_file_list.txt -c flac "{file_dest}"')
+        logger.info('Writing tags')
         self._write_tags(file_dest)
