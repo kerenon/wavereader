@@ -15,6 +15,11 @@ from mutagen import id3
 from PIL import Image
 from google.api_core.exceptions import ServiceUnavailable, ResourceExhausted
 
+from google.cloud import texttospeech_v1
+from google.cloud.texttospeech_v1.services.text_to_speech.transports.grpc import (
+    TextToSpeechGrpcTransport,
+)
+
 logger = logging.getLogger('wavereader.tts')
 
 MAX_REQUESTS_PER_MINUTE = 200
@@ -72,7 +77,11 @@ class Narrator:
         self._coverfile = coverfile
 
     def __init__(self, voice_name="en-US-Wavenet-D"):
-        self.client = texttospeech.TextToSpeechClient()
+        self._channel = TextToSpeechGrpcTransport.create_channel(
+            options=[("grpc.max_receive_message_length", 24 * 1024 * 1024)]
+        )
+        self._transport = TextToSpeechGrpcTransport(channel=self._channel)
+        self.client = texttospeech_v1.TextToSpeechClient(transport=self._transport)
         self.voice = texttospeech.VoiceSelectionParams(
             language_code="en-US", name=voice_name
         )
