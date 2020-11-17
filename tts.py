@@ -13,7 +13,7 @@ from mutagen.flac import FLAC
 from mutagen.flac import Picture
 from mutagen import id3
 from PIL import Image
-from google.api_core.exceptions import ServiceUnavailable
+from google.api_core.exceptions import ServiceUnavailable, ResourceExhausted
 
 logger = logging.getLogger('wavereader.tts')
 
@@ -151,9 +151,8 @@ class Narrator:
                         audio_chunk = self._text_chunk_to_audio_chunk(text_chunk)
                         self._used_characters += len(text_chunk)
                         success = True
-                    except InternalServerError:
-                        continue
-                    except ServiceUnavailable:
+                    except (InternalServerError, ServiceUnavailable):
+                        logger.debug('Error during conversion. Retrying.')
                         continue
                 wav_file_name = f'{td.name}/{str(self._chunk_counter).zfill(5)}_{Path(file_dest).with_suffix(".wav")}'
                 # TODO: is it possible to add the lines from the book as lyrics?
