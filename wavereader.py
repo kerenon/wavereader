@@ -135,6 +135,9 @@ def main():
     for counter, job in enumerate(joblist.keys(), start=1):
         logger.info(f'Processing chapter [{counter}/{len(joblist)}]: "{job}"')
         flac_path = Path(f'{Path(ebook).stem}_{str(counter).zfill(3)}_{sanitize_text(job)}').with_suffix(".flac")
+        if Path(flac_path).exists():
+            logger.info(f'File "{flac_path}" already exists. Skipping.')
+            continue
         narrator.author = author
         narrator.album_title = title
         narrator.title = job
