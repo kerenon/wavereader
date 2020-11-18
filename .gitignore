@@ -169,3 +169,4 @@ pip-selfcheck.json
 ffmpeg*.txt
 *.flac
 *.wav
+tmp/
