@@ -94,7 +94,7 @@ def main():
 
     book = epub.read_epub(ebook)
     title = book.title
-    author = 'Unknown'
+    author = ''
 
     for creator in book.get_metadata('DC', 'creator'):
         creator_name = creator[0]
@@ -104,13 +104,21 @@ def main():
                 author = creator_name
                 break
 
+    if not author:
+        logger.info(f'Unable to determine book author. Please enter author name, or leave empty to use "Unknown":')
+        author = input()
+        if author == '':
+            author = 'Unknown'
+
     logger.info(f'Title: {title}')
     logger.info(f'Author: {author}')
+
     chapter_title = ''
     last_chapter = ''
     book_content = [book.get_item_with_id(e[0]).get_name() for e in book.spine]
 
     joblist = {}
+    book_length = 0
 
     for element in book_content:
         if is_chapter_marker(element, book.toc):
@@ -130,6 +138,12 @@ def main():
             joblist[chapter_title].extend(element_content_text)
         else:
             joblist[chapter_title] = element_content_text
+
+    for job in joblist:
+        for line in joblist[job]:
+            book_length += len(line.strip())
+    logger.info(f'This books length is ~{book_length} characters. To continue, press [ENTER], and [CTRL-C] to quit!')
+    input()
 
     narrator = Narrator()
     for counter, job in enumerate(joblist.keys(), start=1):
