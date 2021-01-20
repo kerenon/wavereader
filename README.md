@@ -5,6 +5,13 @@ Create audiobook albums from epub files using Googles WaveNet voices
 In its current form, this is nothing more than a proof-of-concept that I hacked together, to see if it's even possible. It is BTW :).
 For now, if you can get it to work, it breaks the epub file into chapters, and creates neat little albums in flac format.
 
+# The good, the bad and the epub
+During development, I realized that either the epub format is waaaay too forgiving, or the epub files found in the wild simply
+don't give a rat's ass about sticking to the format specifications. The end result is that parsing epub files is a clusterfuck.
+It seems none of the python epub libraries (that I know of) could parse the ~20 epubs in my test package the way I want/need it. I could just treat them
+az zip files and parse the xml myself, but I'm not really sure want to do that. I'll probably gonna take a look at other language/library pairs,
+and choose on that I like, and that can handle all my test files.
+
 One of the last test-runs produced something like this:
 
 ```
